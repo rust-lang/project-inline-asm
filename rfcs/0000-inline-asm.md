@@ -377,20 +377,20 @@ Here is the list of currently supported register classes:
 
 | Architecture | Register class | Registers | LLVM constraint code | Allowed types |
 | ------------ | -------------- | --------- | ----- | ------------- |
-| x86 | `reg` | `ax`, `bx`, `cx`, `dx`, `si`, `di`, `bp`, `r[8-15]` (x86-64 only) | `r` | `i8`, `i16`, `i32`, `i64` (x86-64 only) |
+| x86 | `reg` | `ax`, `bx`, `cx`, `dx`, `si`, `di`, `r[8-15]` (x86-64 only) | `r` | `i8`, `i16`, `i32`, `i64` (x86-64 only) |
 | x86 | `reg_abcd` | `ax`, `bx`, `cx`, `dx` | `Q` | `i8`, `i16`, `i32`, `i64` (x86-64 only) |
 | x86 | `vreg` | `xmm[0-7]` (x86) `xmm[0-15]` (x86-64) | `x` | `i32`, `i64`, `f32`, `f64`, `v128`, `v256`, `v512` |
 | x86 | `vreg_evex` | `xmm[0-31]` (AVX-512, otherwise same as `vreg`) | `v` | `i32`, `i64`, `f32`, `f64`, `v128`, `v256`, `v512` |
 | x86 (AVX-512) | `kreg` | `k[1-7]` | `Yk` | `i16`, `i32`, `i64` |
-| AArch64 | `reg` | `x[0-31]` | `r` | `i8`, `i16`, `i32`, `i64` |
+| AArch64 | `reg` | `x[0-28]`, `x30` | `r` | `i8`, `i16`, `i32`, `i64` |
 | AArch64 | `vreg` | `v[0-31]` | `w` | `i8`, `i16`, `i32`, `i64`, `f32`, `f64`, `v64`, `v128` |
 | AArch64 | `vreg_low` | `v[0-15]` | `x` | `i8`, `i16`, `i32`, `i64`, `f32`, `f64`, `v64`, `v128` |
 | AArch64 | `vreg_low8` | `v[0-7]` | `y` | `i8`, `i16`, `i32`, `i64`, `f32`, `f64`, `v64`, `v128` |
-| ARM | `reg` | `r[0-r12]`, `r14` | `r` | `i8`, `i16`, `i32` |
+| ARM | `reg` | `r[0-r10]`, `r12`, `r14` | `r` | `i8`, `i16`, `i32` |
 | ARM | `vreg` | `s[0-31]`, `d[0-31]`, `q[0-15]` | `w` | `f32`, `f64`, `v64`, `v128` |
 | ARM | `vreg_low` | `s[0-31]`, `d[0-15]`, `q[0-7]` | `t` | `f32`, `f64`, `v64`, `v128` |
 | ARM | `vreg_low8` | `s[0-15]`, `d[0-d]`, `q[0-3]` | `x` | `f32`, `f64`, `v64`, `v128` |
-| RISC-V | `reg` | `x1`, `x[5-31]` | `r` | `i8`, `i16`, `i32`, `i64` (RV64 only) |
+| RISC-V | `reg` | `x1`, `x[5-7]`, `x[9-31]` | `r` | `i8`, `i16`, `i32`, `i64` (RV64 only) |
 | RISC-V | `vreg` | `f[0-31]` | `f` | `f32`, `f64` |
 
 > Notes on allowed types:
@@ -453,6 +453,7 @@ Some registers are explicitly not supported for use with inline assembly:
 | Architecture | Unsupported register | Reason |
 | ------------ | -------------------- | ------ |
 | All | `sp` | The stack pointer must be restored to its original value at the end of an asm code block. |
+| All | `bp` (x86), `r11` (ARM), `x29` (AArch64), `x8` (RISC-V) | The frame pointer cannot be used as an input or output. |
 | x86 | `ah`, `bh`, `ch`, `dh` | These are poorly supported by compiler backends. Use 16-bit register views (e.g. `ax`) instead. |
 | x86 | `k0` | This is a constant zero register which can't be modified. |
 | x86 | `ip` | This is the program counter, not a real register. |
