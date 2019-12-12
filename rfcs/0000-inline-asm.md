@@ -112,6 +112,17 @@ assert_eq!(x, 8);
 We can see that `inout` is used to specify an argument that is both input and output.
 This is different from specifying an input and output separately in that it is guaranteed to assign both to the same register.
 
+It is also possible to specify different variables for the input and output parts of an `inout` operand:
+
+```rust
+let x: u32 = 3;
+let y: u32;
+unsafe {
+    asm!("add {0}, {number}", inout(reg) x => y, number = imm 5);
+}
+assert_eq!(y, 8);
+```
+
 ## Late output operands
 
 The Rust compiler is conservative with its allocation of operands. It is assumed that an `out`
@@ -293,7 +304,7 @@ The following ABNF specifies the general syntax:
 ```
 dir_spec := "in" / "out" / "lateout" / "inout" / "inlateout"
 reg_spec := <arch specific register class> / "<arch specific register name>"
-operand_expr := expr / _
+operand_expr := expr / "_" / expr "=>" expr / expr "=>" "_"
 reg_operand := dir_spec "(" reg_spec ")" operand_expr
 operand := reg_operand / "imm" const_expr / "sym" path
 flag := "pure" / "nomem" / "readonly" / "preserves_flags" / "noreturn"
@@ -336,7 +347,12 @@ Several types of operands are supported:
   - `<reg>` can refer to a register class or an explicit register. The allocated register name is substituted into the asm template string.
   - The allocated register will contain the value of `<expr>` at the start of the asm code.
   - `<expr>` must be an initialized place expression, to which the contents of the allocated register is written to at the end of the asm code.
-* `inlateout(<reg>) <expr>`
+* `inout(<reg>) <in expr> => <out expr>`
+  - Same as `inout` except that the initial value of the register is taken from the value of `<in expr>`.
+  - `<out expr>` must be a (possibly uninitialized) place expression, to which the contents of the allocated register is written to at the end of the asm code.
+  - An underscore (`_`) may be specified instead of an expression for `<out expr>`, which will cause the contents of the register to be discarded at the end of the asm code (effectively acting as a clobber).
+  - `<in expr>` and `<out expr>` may have different types.
+* `inlateout(<reg>) <expr>` / `inlateout(<reg>) <in expr> => <out expr>`
   - Identical to `inout` except that the register allocator can reuse a register allocated to an `in` (this can happen if the compiler knows the `in` has the same initial value as the `inlateout`).
   - You should only write to the register after all inputs are read, otherwise you may clobber an input.
 * `imm <expr>`
@@ -512,6 +528,8 @@ The direction specification maps to a LLVM constraint specification as follows (
 * `lateout(reg)` => `=r` (Rust's late outputs are regular outputs in LLVM/GCC terminology)
 * `inlateout(reg)` => `=r, 0` (cf. `inout` and `lateout`)
 
+> If an `inout` is used where the output type is smaller than the input type then some special handling is needed to avoid LLVM issues. See [this bug][issue-65452].
+
 As written this RFC requires architectures to map from Rust constraint specifications to LLVM constraint codes. This is in part for better readability on Rust's side and in part for independence of the backend:
 
 * Register classes are mapped to the appropriate constraint code as per the table above.
@@ -542,6 +560,7 @@ If the `noreturn` flag is set then an `unreachable` LLVM instruction is inserted
 
 [llvm-constraint]: http://llvm.org/docs/LangRef.html#supported-constraint-code-list
 [llvm-clobber]: http://llvm.org/docs/LangRef.html#clobber-constraints
+[issue-65452]: https://github.com/rust-lang/rust/issues/65452
 
 # Drawbacks
 [drawbacks]: #drawbacks
@@ -770,10 +789,6 @@ See the section [above][dsl].
 
 # Unresolved questions
 [unresolved-questions]: #unresolved-questions
-
-- Should we allow passing a value expression (rvalue) as an `inout` operand? The semantics would be that of an input which is allowed to be clobbered (i.e. the output is simply discarded).
-
-- Do we need to add support for tied operands? Most use cases for those should already be covered by `inout`.
 
 - Some registers are reserved and cannot be used in inline assembly. We already disallow the stack pointer from being used since it is always reserved, but there are other registers that are only sometimes reserved (e.g. the frame pointer if the function needs one, `r9` on some ARM targets, etc). Should we disallow the use of these registers on the frontend (rustc) or leave it for the backend (LLVM) to produce a warning if these are used?
 
