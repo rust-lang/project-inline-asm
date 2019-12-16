@@ -529,7 +529,7 @@ The direction specification maps to a LLVM constraint specification as follows (
 * `lateout(reg)` => `=r` (Rust's late outputs are regular outputs in LLVM/GCC terminology)
 * `inlateout(reg)` => `=r, 0` (cf. `inout` and `lateout`)
 
-> If an `inout` is used where the output type is smaller than the input type then some special handling is needed to avoid LLVM issues. See [this bug][issue-65452].
+If an `inout` is used where the output type is smaller than the input type then some special handling is needed to avoid LLVM issues. See [this bug][issue-65452].
 
 As written this RFC requires architectures to map from Rust constraint specifications to LLVM constraint codes. This is in part for better readability on Rust's side and in part for independence of the backend:
 
@@ -642,7 +642,7 @@ str w2, [x1, #0]
 str w20, [x1, #8]
 
 // If necessary, restore callee-saved registers here.
-ldr x20, [sp], #16 
+ldr x20, [sp], #16
 
 ret
 
@@ -790,10 +790,6 @@ See the section [above][dsl].
 
 # Unresolved questions
 [unresolved-questions]: #unresolved-questions
-
-- Some registers are reserved and cannot be used in inline assembly. We already disallow the stack pointer from being used since it is always reserved, but there are other registers that are only sometimes reserved (e.g. the frame pointer if the function needs one, `r9` on some ARM targets, etc). Should we disallow the use of these registers on the frontend (rustc) or leave it for the backend (LLVM) to produce a warning if these are used?
-
-- Should we support some sort of shorthand notation for operand names to avoid needing to write `blah = out(reg) blah`? For example, if the expression is just a single identifier, we could implicitly allow that operand to be referred to using that identifier.
 
 - What should `preserves_flags` do on architectures that don't have condition flags (e.g. RISC-V)? Do nothing? Compile-time error?
 
