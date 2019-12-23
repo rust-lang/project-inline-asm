@@ -277,7 +277,7 @@ unsafe {
     asm!(
         "add {0}, {1}",
         inlateout(reg) a, in(reg) b,
-        flags(pure, nomem)
+        flags(pure, nomem, nostack)
     );
 }
 assert_eq!(a, 8);
@@ -286,6 +286,7 @@ assert_eq!(a, 8);
 Flags can be provided as an optional final argument to the `asm!` macro. We specified two flags here:
 - `pure` means that the asm code has no observable side effects and that its output depends only on its inputs. This allows the compiler optimizer to call the inline asm fewer times or even eliminate it entirely.
 - `nomem` means that the asm code does not read or write to memory. By default the compiler will assume that inline assembly can read or write any memory address that is accessible to it (e.g. through a pointer passed as an operand, or a global).
+- `nostack` means that the asm code does not push any data onto the stack. This allows the compiler to use optimizations such as the stack red zone on x86_64 to avoid stack pointer adjustments.
 
 These allow the compiler to better optimize code using `asm!`, for example by eliminating pure `asm!` blocks whose outputs are not needed.
 
@@ -516,6 +517,7 @@ Currently the following flags are defined:
 - `readonly`: The `asm` block does not write to any memory. This allows the compiler to cache the values of unmodified global variables in registers across the `asm` block since it knows that they are not written to by the `asm`.
 - `preserves_flags`: The `asm` block does not modify the condition flags. This allows the compiler to avoid recomputing the condition flags after the `asm` block.
 - `noreturn`: The `asm` block never returns, and its return type is defined as `!` (never). Behavior is undefined if execution falls through past the end of the asm code.
+- `nostack`: The `asm` block does not push data to the stack, or write to the stack red-zone (if supported by the target). If this flag is *not* used then the stack pointer is guaranteed to be suitably aligned (according to the target ABI) for a function call.
 
 The `nomem` and `readonly` flags are mutually exclusive: it is an error to specify both. Specifying `pure` on an asm block with no outputs is linted against since such a block will be optimized away to nothing.
 
@@ -554,10 +556,13 @@ Additionally, the following attributes are added to the LLVM `asm` statement:
 * The `nounwind` attribute is always added: unwinding from an inline asm block is not allowed (and not supported by LLVM anyways).
 * If the `nomem` flag is set then the `readnone` attribute is added to the LLVM `asm` statement.
 * If the `readonly` flag is set then the `readonly` attribute is added to the LLVM `asm` statement.
-* If the `pure` flag is not specified then the `sideffect` flag is added the LLVM `asm` statement.
+* If the `pure` flag is not set then the `sideffect` flag is added the LLVM `asm` statement.
+* If the `nostack` flag is not set then the `alignstack` flag is added the LLVM `asm` statement.
 * On x86 the `inteldialect` flag is added the LLVM `asm` statement so that the Intel syntax is used instead of the AT&T syntax.
 
 If the `noreturn` flag is set then an `unreachable` LLVM instruction is inserted after the asm invocation.
+
+> Note that `alignstack` is not currently supported by GCC, so we will need to implement support in GCC if Rust ever gets a GCC back-end.
 
 [llvm-constraint]: http://llvm.org/docs/LangRef.html#supported-constraint-code-list
 [llvm-clobber]: http://llvm.org/docs/LangRef.html#clobber-constraints
