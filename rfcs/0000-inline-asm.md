@@ -283,7 +283,7 @@ unsafe {
 assert_eq!(a, 8);
 ```
 
-Flags can be provided as an optional final argument to the `asm!` macro. We specified two flags here:
+Flags can be provided as an optional final argument to the `asm!` macro. We specified three flags here:
 - `pure` means that the asm code has no observable side effects and that its output depends only on its inputs. This allows the compiler optimizer to call the inline asm fewer times or even eliminate it entirely.
 - `nomem` means that the asm code does not read or write to memory. By default the compiler will assume that inline assembly can read or write any memory address that is accessible to it (e.g. through a pointer passed as an operand, or a global).
 - `nostack` means that the asm code does not push any data onto the stack. This allows the compiler to use optimizations such as the stack red zone on x86_64 to avoid stack pointer adjustments.
