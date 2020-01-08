@@ -317,7 +317,7 @@ asm := "asm!(" format_string *("," [ident "="] operand) ["," flags] ")"
 
 ## Template string
 
-The assembler template uses the same syntax as [format strings][format-syntax] (i.e. placeholders are specified by curly braces). The corresponding arguments are accessed in order, by index, or by name.
+The assembler template uses the same syntax as [format strings][format-syntax] (i.e. placeholders are specified by curly braces). The corresponding arguments are accessed in order, by index, or by name. However, implicit named arguments (introduced by [RFC #2795][rfc-2795]) are not supported.
 
 The assembly code syntax used is that of the GNU assembler (GAS). The only exception is on x86 where the Intel syntax is used instead of GCC's AT&T syntax.
 
@@ -326,6 +326,8 @@ This RFC only specifies how operands are substituted into the template string. A
 However there is one restriction on the asm string: any assembler state (e.g. the current section which can be changed with `.section`) must be restored to its original value at the end of the asm string.
 
 The compiler will lint against any operands that are not used in the template string, except for operands that specify an explicit register.
+
+[rfc-2795]: https://github.com/rust-lang/rfcs/pull/2795
 
 ## Operand type
 
