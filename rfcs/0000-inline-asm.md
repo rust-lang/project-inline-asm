@@ -836,3 +836,7 @@ The `global_asm!` macro could be extended to support `imm` and `sym` operands si
 ## Memory operands
 
 We could support `mem` as an alternative to specifying a register class which would leave the operand in memory and instead produce a memory address when inserted into the asm string. This would allow generating more efficient code by taking advantage of addressing modes instead of using an intermediate register to hold the computed address.
+
+## Shorthand notation for operand names
+
+We should support some sort of shorthand notation for operand names to avoid needing to write `blah = out(reg) blah`? For example, if the expression is just a single identifier, we could implicitly allow that operand to be referred to using that identifier.
