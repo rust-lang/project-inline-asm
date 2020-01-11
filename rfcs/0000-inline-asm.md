@@ -866,4 +866,4 @@ We should support some sort of shorthand notation for operand names to avoid nee
 
 Sometimes it can be difficult to specify the necessary clobbers for an asm block which performs a function call. In particular, it is difficult for such code to be forward-compatible if the architecture adds new registers in a future revision, which the compiler may use but will be missing from the `asm!` clobber list.
 
-One possible solution to this would be to add a `clobber(<abi>)` operand where `<abi>` is a calling convention such as `"C"` or `"stdcall"`. The compiler would then automatically insert the necessary clobbers for a function call to that ABI.
+One possible solution to this would be to add a `clobber(<abi>)` operand where `<abi>` is a calling convention such as `"C"` or `"stdcall"`. The compiler would then automatically insert the necessary clobbers for a function call to that ABI. Also `clobber(all)`, could be used to indicate all registers are clobbered by the `asm!`.
