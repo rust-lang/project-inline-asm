@@ -517,11 +517,32 @@ Currently the following flags are defined:
 - `pure`: The `asm` block has no side effects, and its outputs depend only on its direct inputs (i.e. the values themselves, not what they point to). This allows the compiler to execute the `asm` block fewer times than specified in the program (e.g. by hoisting it out of a loop) or even eliminate it entirely if the outputs are not used. A warning is emitted if this flag is used on an `asm` with no outputs.
 - `nomem`: The `asm` blocks does not read or write to any memory. This allows the compiler to cache the values of modified global variables in registers across the `asm` block since it knows that they are not read or written to by the `asm`.
 - `readonly`: The `asm` block does not write to any memory. This allows the compiler to cache the values of unmodified global variables in registers across the `asm` block since it knows that they are not written to by the `asm`.
-- `preserves_flags`: The `asm` block does not modify the condition flags. This allows the compiler to avoid recomputing the condition flags after the `asm` block.
+- `preserves_flags`: The `asm` block does not modify the flags register (defined below). This allows the compiler to avoid recomputing the condition flags after the `asm` block.
 - `noreturn`: The `asm` block never returns, and its return type is defined as `!` (never). Behavior is undefined if execution falls through past the end of the asm code.
 - `nostack`: The `asm` block does not push data to the stack, or write to the stack red-zone (if supported by the target). If this flag is *not* used then the stack pointer is guaranteed to be suitably aligned (according to the target ABI) for a function call.
 
 The `nomem` and `readonly` flags are mutually exclusive: it is an error to specify both. Specifying `pure` on an asm block with no outputs is linted against since such a block will be optimized away to nothing.
+
+These flag registers which must be preserved if `preserves_flags` is set:
+- x86
+  - Status flags in `EFLAGS` (CF, PF, AF, ZF, SF, OF).
+  - Direction flag in `EFLAGS` (DF).
+  - Floating-point status word (all).
+  - Floating-point exception flags in `MXCSR` (PE, UE, OE, ZE, DE, IE).
+- ARM
+  - Condition flags in `CPSR` (N, Z, C, V)
+  - Saturation flag in `CPSR` (Q)
+  - Greater than or equal flags in `CPSR` (GE).
+  - Condition flags in `FPSCR` (N, Z, C, V)
+  - Saturation flag in `FPSCR` (QC)
+  - Floating-point exception flags in `FPSCR` (IDC, IXC, UFC, OFC, DZC, IOC).
+- AArch64
+  - Condition flags (`NZCV` register).
+  - Floating-point status (`FPSR` register).
+- RISC-V
+  - Floating-point exception flags in `fcsr` (`fflags`).
+
+> Note: As a general rule, these are the flags which are *not* preserved when performing a function call.
 
 ## Mapping to LLVM IR
 
@@ -798,7 +819,7 @@ See the section [above][dsl].
 # Unresolved questions
 [unresolved-questions]: #unresolved-questions
 
-- What should `preserves_flags` do on architectures that don't have condition flags (e.g. RISC-V)? Do nothing? Compile-time error?
+None
 
 # Future possibilities
 [future-possibilities]: #future-possibilities
@@ -840,3 +861,9 @@ We could support `mem` as an alternative to specifying a register class which wo
 ## Shorthand notation for operand names
 
 We should support some sort of shorthand notation for operand names to avoid needing to write `blah = out(reg) blah`? For example, if the expression is just a single identifier, we could implicitly allow that operand to be referred to using that identifier.
+
+## Clobbers for function calls
+
+Sometimes it can be difficult to specify the necessary clobbers for an asm block which performs a function call. In particular, it is difficult for such code to be forward-compatible if the architecture adds new registers in a future revision, which the compiler may use but will be missing from the `asm!` clobber list.
+
+One possible solution to this would be to add a `clobber(<abi>)` operand where `<abi>` is a calling convention such as `"C"` or `"stdcall"`. The compiler would then automatically insert the necessary clobbers for a function call to that ABI. Also `clobber(all)`, could be used to indicate all registers are clobbered by the `asm!`.
