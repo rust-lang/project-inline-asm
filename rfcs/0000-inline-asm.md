@@ -451,7 +451,7 @@ Some registers have multiple names. These are all treated by the compiler as ide
 | RISC-V | `f[18-27]` | `fs[2-11]` |
 | RISC-V | `f[28-31]` | `ft[8-11]` |
 
-Some registers are explicitly not supported for use with inline assembly:
+Some registers cannot be used for input or output operands:
 
 | Architecture | Unsupported register | Reason |
 | ------------ | -------------------- | ------ |
