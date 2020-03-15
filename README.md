@@ -19,10 +19,12 @@ The project group has published the following RFCs:
 - [#2836: Introduce the ASM project group][rfc-project]
 - [#2843: Add llvm_asm! and deprecate asm!][rfc-llvm-asm]
 - [#2850: Inline assembly][rfc-inline-asm]
+  - Now closed, discussion continues in [#2873: Inline assembly][rfc-inline-asm2]
 
 [rfc-project]: https://github.com/rust-lang/rfcs/pull/2836
 [rfc-llvm-asm]: https://github.com/rust-lang/rfcs/pull/2843
 [rfc-inline-asm]: https://github.com/rust-lang/rfcs/pull/2850
+[rfc-inline-asm2]: https://github.com/rust-lang/rfcs/pull/2873
 
 # Contributing
 
